@@ -28,7 +28,7 @@ jobs:
       with:
         push: true
         context: app
-        tags: ${{ vars.ACR_REGISTRY }}.azurecr.io/myapp:latest
+        tags: ${{ vars.ACR_REGISTRY }}.azurecr.io/myapp:${{ github.run_number }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -43,4 +43,23 @@ jobs:
     
     - name: Deploy the app
       run: |
-        helm upgrade --install my-app app/2bcloud/ -n myapp
+        helm upgrade --install my-app app/2bcloud/ --set image.tag=${{ github.run_number }} -n myapp
+    
+    - name: Check if the app was deployed
+      run: |
+        kubectl rollout status deployment/my-app-2bcloud --namespace=myapp --timeout=60s
+    
+    - name: Extra check with curl
+      run: |
+        IP=$(kubectl get svc my-app-2bcloud -n myapp -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        for i in {1..10}; do
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$IP:8080/healtz)
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Service is healthy"
+            exit 0
+          fi
+          echo "Waiting for service... (attempt $i)"
+          sleep 5
+        done
+        echo "Service did not become healthy in time"
+        exit 1
