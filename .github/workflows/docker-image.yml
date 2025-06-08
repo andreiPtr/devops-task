@@ -27,5 +27,5 @@ jobs:
       with:
         push: true
         context: app
-        tags: ${{ vars.ACR_REGISTRY }}/myapp:latest
+        tags: ${{ vars.ACR_REGISTRY }}.azurecr.io/myapp:latest
 
