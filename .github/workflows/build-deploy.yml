@@ -1,6 +1,7 @@
-name: Docker Image CI
+name: Build Deploy App
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
   pull_request:
@@ -29,3 +30,16 @@ jobs:
         context: app
         tags: ${{ vars.ACR_REGISTRY }}.azurecr.io/myapp:latest
 
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set kubeconfig
+      uses: azure/k8s-set-context@v4
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBECONFIG }}
+    
+    - name: Deploy the app
+      run: |
+        helm upgrade --install my-release app/2bcloud/ -n myapp
