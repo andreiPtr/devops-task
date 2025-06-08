@@ -30,6 +30,16 @@ jobs:
         context: app
         tags: ${{ vars.ACR_REGISTRY }}.azurecr.io/myapp:${{ github.run_number }}
 
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: ${{ vars.ACR_REGISTRY }}.azurecr.io/myapp:${{ github.run_number }}
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
   deploy:
     runs-on: ubuntu-latest
     needs: build
